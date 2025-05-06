@@ -9,7 +9,7 @@ on:
       - main   # Trigger on pull requests to main branch
 
 jobs:
-  # CI Job to build and test the application
+  # CI Job to build, test, and package the application
   build_and_test:
     runs-on: ubuntu-latest
 
@@ -40,7 +40,7 @@ jobs:
           name: publish-artifact
           path: ./publish
 
-  # CD Job to deploy the app to Heroku
+  # CD Job to deploy the app to Azure
   deploy:
     needs: build_and_test   # Deploy only after successful build and test job
     runs-on: ubuntu-latest
@@ -49,23 +49,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Heroku CLI
-        uses: akshnz/heroku-cli-action@v1
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-
-      - name: Download Artifacts
+      - name: Download Build Artifacts
         uses: actions/download-artifact@v2
         with:
-          name: publish-artifact  # The name of the artifact to download
+          name: publish-artifact
 
-      - name: Deploy to Heroku
+      - name: Set up Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: '2.34.0'
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Deploy to Azure Web App
         run: |
-          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
-          git config --global user.email "${{ secrets.HEROKU_EMAIL }}"
-          git config --global user.name "GitHub Actions"
-          git add .
-          git commit -m "Deploy from GitHub Actions"
-          git push heroku master
+          az webapp deploy --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+                           --name ${{ secrets.AZURE_APP_NAME }} \
+                           --src-path ./publish \
+                           --type zip
