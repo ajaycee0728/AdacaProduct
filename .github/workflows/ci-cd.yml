@@ -40,7 +40,7 @@ jobs:
           name: publish-artifact
           path: ./publish
 
-  # CD Job to deploy the app to Azure
+  # CD Job to deploy the app to Heroku
   deploy:
     needs: build_and_test   # Deploy only after successful build and test job
     runs-on: ubuntu-latest
@@ -49,18 +49,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Azure CLI
-        uses: azure/CLI@v1
+      - name: Set up Heroku CLI
+        uses: akshnz/heroku-cli-action@v1
         with:
-          azcliversion: '2.34.0'
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
 
-      - name: Login to Azure
-        uses: azure/login@v1
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          name: publish-artifact  # The name of the artifact to download
 
-      - name: Deploy to Azure Web App
+      - name: Deploy to Heroku
         run: |
-          az webapp deploy --resource-group {resource-group-name} --name ${{ secrets.AZURE_APP_NAME }} --src-path ./publish --type zip
+          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          git config --global user.email "${{ secrets.HEROKU_EMAIL }}"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Deploy from GitHub Actions"
+          git push heroku master
