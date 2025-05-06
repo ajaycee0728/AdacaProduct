@@ -54,3 +54,16 @@
 
     - SET Price = Price * 1.10 : This updates the Price column for the selected rows. The new price is calculated by multiplying the current price by 1.10, effectively increasing it by 10%.
     - WHERE CategoryId = ( SELECT CategoryId FROM Categories WHERE Name = 'Electronics') : retrieves the CategoryId of the "Electronics" category from the Categories table.
+
+## TASK 3
+
+1. Designing a Database Schema for Multi-Database Support (SQL Server + PostgreSQL)
+ - Using Entity Framework lessen or avoid the risk interms to support both SQL and PostgreSQL
+ - Use code first instead of database first to define first the properties and let the dotnet generate correct database schema or column datatype 
+2. What strategies would you use to optimize SQL queries for performance in a large-scale .NET application? 
+ - Avoid * function just retrieve or state only needed columns
+ - Avoid joining tables that are not needed 
+ - Using Memory Cache 
+3. Describe your approach to implementing a caching layer for the Product API to improve performance.  
+ - In my scenario on my Product service, It will check first if the cache contains using _cache.TryGetValue(_cacheKey, out List<Product> products)
+if the cache is missing or expired it will query all the products from the database using _context.Products.ToList() and also I set a expiration for 5 mins using .SetSlidingExpiration(TimeSpan.FromMinutes(5)
