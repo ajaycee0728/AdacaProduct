@@ -1,0 +1,56 @@
+## TASK 1
+
+# AdacaProduct.API
+ - Handles API Request in and out from frontend to Backend.
+ - Dependency Injection using AddScope and also Added Memory Cache to demonstrate the Caching
+# AdacaProduct.Model 
+    - AppDBContext
+        - A class in an Entity Framework Core-based application. It serves as the primary class responsible for interacting with the database. 
+    - ApiResponse
+        - A object for response handling having a message , data and also a status for error handling
+
+# AdacaProduct.Service
+    - Added IMemoryCache to allow the data stays in memory for the stated time 
+
+# Instructions
+    - Add database name ProductDb
+    - run dotnet ef database update
+    - you're good to go
+
+## Task 2
+
+ # Part A (SQL Server)
+
+    SELECT TOP 5 
+        c.CustomerName,
+        COUNT(o.OrderId) AS TotalOrders,
+        SUM(o.TotalAmount) AS TotalAmount
+    FROM 
+        Customers c
+    JOIN 
+        Orders o ON c.CustomerId = o.CustomerId
+    WHERE 
+        o.OrderDate >= DATEADD(MONTH, -6, GETDATE())
+    GROUP BY 
+        c.CustomerName
+    ORDER BY 
+        TotalOrders DESC, TotalAmount DESC;
+
+    - TOP 5: Limits the result to the top 5 rows. 
+    - COUNT(o.OrderId) AS TotalOrders: Counts the number of orders placed by each customer, labeled as TotalOrders.
+    - SUM(o.TotalAmount) AS TotalAmount: Calculates the total monetary value of all orders for each customer, labeled as TotalAmount.
+    - o.OrderDate >= DATEADD(MONTH, -6, GETDATE()) : Filter the date in the last 6 months
+
+ # Part B (Postgre SQL)
+
+    UPDATE 
+        Products
+    SET Price = Price * 1.10
+    WHERE CategoryId = (
+        SELECT CategoryId
+        FROM Categories
+        WHERE Name = 'Electronics'
+    );
+
+    - SET Price = Price * 1.10 : This updates the Price column for the selected rows. The new price is calculated by multiplying the current price by 1.10, effectively increasing it by 10%.
+    - WHERE CategoryId = ( SELECT CategoryId FROM Categories WHERE Name = 'Electronics') : retrieves the CategoryId of the "Electronics" category from the Categories table.
