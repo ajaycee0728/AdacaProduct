@@ -1,0 +1,66 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main   # Trigger on push to main branch
+  pull_request:
+    branches:
+      - main   # Trigger on pull requests to main branch
+
+jobs:
+  # CI Job to build and test the application
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build the project
+        run: dotnet build --configuration Release
+
+      - name: Run unit tests
+        run: dotnet test --configuration Release
+
+      - name: Publish the project
+        run: dotnet publish --configuration Release --output ./publish
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: publish-artifact
+          path: ./publish
+
+  # CD Job to deploy the app to Azure
+  deploy:
+    needs: build_and_test   # Deploy only after successful build and test job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: '2.34.0'
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Deploy to Azure Web App
+        run: |
+          az webapp deploy --resource-group {resource-group-name} --name ${{ secrets.AZURE_APP_NAME }} --src-path ./publish --type zip
