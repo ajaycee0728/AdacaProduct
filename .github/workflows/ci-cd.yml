@@ -9,18 +9,18 @@ on:
       - main   # Trigger on pull requests to main branch
 
 jobs:
-  # CI Job to build and test the application
+  # CI Job to build, test, and package the application
   build_and_test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0'
+          dotnet-version: '9.0.x' # Update to a compatible version
 
       - name: Restore dependencies
         run: dotnet restore
@@ -35,7 +35,7 @@ jobs:
         run: dotnet publish --configuration Release --output ./publish
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: publish-artifact
           path: ./publish
@@ -47,7 +47,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: publish-artifact
 
       - name: Set up Azure CLI
         uses: azure/CLI@v1
@@ -63,4 +68,7 @@ jobs:
 
       - name: Deploy to Azure Web App
         run: |
-          az webapp deploy --resource-group {resource-group-name} --name ${{ secrets.AZURE_APP_NAME }} --src-path ./publish --type zip
+          az webapp deploy --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+                           --name ${{ secrets.AZURE_APP_NAME }} \
+                           --src-path ./publish \
+                           --type zip
